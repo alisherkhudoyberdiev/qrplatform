@@ -1,0 +1,81 @@
+// QR Menu MVP - Prisma schema (SQLite)
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Restaurant {
+  id             String   @id @default(cuid())
+  name           String
+  subdomain      String?  @unique // Har bir restoran uchun subdomain (masalan: oshxona)
+  logoUrl        String?  // Restoran logotipi (V3)
+  coverImageUrl  String?  // Welcome sahifa fon rasmi
+  promoText      String?  // Aksiya matni (masalan: "Bugungi aksiya...")
+  createdAt      DateTime @default(now())
+  categories     Category[]
+  orders         Order[]
+  adminUsers     AdminUser[]
+}
+
+model Category {
+  id           String    @id @default(cuid())
+  name         String
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  menuItems    MenuItem[]
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int      // so'm
+  description String?
+  imageUrl    String?  // Mahsulot rasmi (V3)
+  ingredients String?  // Ingredientlar (V3)
+  allergens   String?  // Allergenlar (Screen 4)
+  portionSize String?  // Poriya hajmi (Screen 4)
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id             String     @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  status         String     @default("new") // new | preparing | ready
+  tableNumber    String?    // Stol raqami (URL yoki QR orqali)
+  note           String?    // Mijoz izohi
+  paymentMethod  String?   // naqd | payme | click (demo/kelajakda to'lov)
+  createdAt      DateTime   @default(now())
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  quantity   Int
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+}
+
+model SuperAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+}
